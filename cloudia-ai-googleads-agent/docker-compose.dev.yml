@@ -1,0 +1,75 @@
+# Development compose — hot-reload for backend, live-mounted frontend.
+# Usage: docker compose -f docker-compose.dev.yml up
+
+services:
+  ads-agent:
+    build:
+      context: ./google_ads_agents
+      dockerfile: Dockerfile
+    container_name: cloudia_ads_agent_dev
+    restart: unless-stopped
+    ports:
+      - "8020:8000"
+    env_file:
+      - ./google_ads_agents/.env
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Mount source code for hot-reload (overwrites the image's copy)
+      - ./google_ads_agents:/app
+      # Prevent the container's venv from being overwritten by the host mount
+      - /app/__pycache__
+    # Use uvicorn directly with --reload instead of main.py
+    command: >
+      uvicorn api.app:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app
+      --log-level debug
+    networks:
+      - ads-agent-dev
+
+  # Local PostgreSQL for development — not shared with other projects
+  ads-agent-db:
+    image: postgres:15-alpine
+    container_name: cloudia_ads_agent_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: adsagent
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: google_ads_agents
+    ports:
+      - "5433:5432"
+    volumes:
+      - ads_agent_pgdata_dev:/var/lib/postgresql/data
+    networks:
+      - ads-agent-dev
+
+  # Alembic migrations (run once, exits)
+  ads-agent-migrate:
+    build:
+      context: ./google_ads_agents
+      dockerfile: Dockerfile
+    container_name: cloudia_ads_agent_migrate_dev
+    restart: no
+    env_file:
+      - ./google_ads_agents/.env
+    environment:
+      - DATABASE_URL=postgresql://adsagent:devpassword@ads-agent-db:5432/google_ads_agents
+      - ENVIRONMENT=development
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      - ads-agent-db
+    networks:
+      - ads-agent-dev
+
+networks:
+  ads-agent-dev:
+    driver: bridge
+
+volumes:
+  ads_agent_pgdata_dev:

@@ -1,0 +1,38 @@
+services:
+  ads-agent:
+    build:
+      context: ./google_ads_agents
+      dockerfile: Dockerfile
+    container_name: cloudia_ads_agent
+    restart: unless-stopped
+    ports:
+      - "8020:8000"
+    env_file:
+      - ./google_ads_agents/.env
+    environment:
+      - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    networks:
+      - cloudia-erp_default
+    depends_on:
+      - ads-agent-db-init
+
+  # One-shot container to run Alembic migrations before the agent starts
+  ads-agent-db-init:
+    build:
+      context: ./google_ads_agents
+      dockerfile: Dockerfile
+    container_name: cloudia_ads_agent_migrate
+    restart: no
+    env_file:
+      - ./google_ads_agents/.env
+    environment:
+      - ENVIRONMENT=production
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    networks:
+      - cloudia-erp_default
+
+networks:
+  cloudia-erp_default:
+    external: true

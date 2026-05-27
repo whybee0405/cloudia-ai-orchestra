@@ -1,0 +1,45 @@
+# Environment
+.env
+.env.prod
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Docker
+*.log
+
+# MinIO / media
+*.mp4
+*.mp3
+*.wav
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
