@@ -17,6 +17,7 @@ class ClientCreate(BaseModel):
     brand_colours: Optional[Any] = None
     city: Optional[str] = None
     country: str = "South Africa"
+    brand_dna_client_id: Optional[str] = None
 
 
 class ClientRead(BaseModel):
@@ -34,6 +35,7 @@ class ClientRead(BaseModel):
     country: Optional[str] = None
     is_active: bool
     created_at: Optional[datetime] = None
+    brand_dna_client_id: Optional[str] = None
 
 
 class CampaignCreate(BaseModel):

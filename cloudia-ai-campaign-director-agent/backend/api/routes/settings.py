@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.api.schemas import (
@@ -14,6 +15,16 @@ from backend.db.models import BrandGuidelines, Client, PlatformAccount
 from backend.db.session import get_db
 
 router = APIRouter(tags=["settings"])
+
+
+@router.get("/clients/by-brand-dna/{brand_dna_client_id}", response_model=ClientRead)
+def get_client_by_brand_dna(brand_dna_client_id: str, db: Session = Depends(get_db)):
+    client = db.execute(
+        select(Client).where(Client.brand_dna_client_id == brand_dna_client_id)
+    ).scalar_one_or_none()
+    if not client:
+        raise HTTPException(404, "No Campaign Director client linked to this Brand DNA client")
+    return client
 
 
 @router.get("/clients", response_model=list[ClientRead])
