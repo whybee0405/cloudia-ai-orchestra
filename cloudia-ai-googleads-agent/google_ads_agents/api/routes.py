@@ -21,10 +21,11 @@ POST /accounts/{account_id}/baseline   — manually set account baseline metrics
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+import config
 from agents.creator import CreatorAgent
 from ai.claude import ClaudeClient
 from api.schemas import (
@@ -491,6 +492,44 @@ def list_audit_log(
         severity,
     )
     return entries
+
+
+# ── Internal (Brand DNA Director) routes ─────────────────────────────────────
+
+_internal_router = APIRouter(prefix="/internal", tags=["Internal"])
+
+
+def _verify_internal_secret(x_internal_secret: str = Header(default="")) -> None:
+    secret = getattr(config, "INTERNAL_API_SECRET", "")
+    if secret and x_internal_secret != secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+@_internal_router.get("/health")
+def internal_health() -> dict:
+    return {"status": "ok", "service": "google-ads"}
+
+
+@_internal_router.get("/summary", dependencies=[Depends(_verify_internal_secret)])
+def internal_summary(db: Session = Depends(get_db)) -> dict:
+    active_accounts = db.scalar(
+        select(func.count()).select_from(Account).where(Account.status == "active")
+    ) or 0
+    pending_approvals = db.scalar(
+        select(func.count()).select_from(ApprovalQueue).where(ApprovalQueue.status == "pending")
+    ) or 0
+    total_audit = db.scalar(
+        select(func.count()).select_from(AuditLog)
+    ) or 0
+    return {
+        "service": "google-ads",
+        "active_accounts": active_accounts,
+        "pending_approvals": pending_approvals,
+        "total_audit_entries": total_audit,
+    }
+
+
+router.include_router(_internal_router)
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────

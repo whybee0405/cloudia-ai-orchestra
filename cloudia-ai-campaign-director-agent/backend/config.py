@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     database_url: str
     db_password: str = ""
 
+    # Brand DNA Service
+    brand_dna_service_url: str = "http://localhost:8000"
+    internal_api_secret: str = ""
+
     # Redis
     redis_url: str = "redis://redis:6379/0"
 

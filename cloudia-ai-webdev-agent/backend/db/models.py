@@ -129,6 +129,7 @@ class Client(Base):
         DateTime, nullable=False, default=_utcnow, server_default=func.now()
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    brand_dna_client_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
 
     # Relationships
     projects: Mapped[list["Project"]] = relationship(

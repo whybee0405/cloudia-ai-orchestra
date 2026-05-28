@@ -1,5 +1,6 @@
 """Anthropic Claude wrapper — all Claude calls go through this module."""
 import logging
+import threading
 import time
 from typing import Optional
 import anthropic
@@ -8,6 +9,22 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 _client: Optional[anthropic.Anthropic] = None
+
+# Thread-local brand context — set once per Celery task, auto-prepended to every system prompt
+_brand_ctx = threading.local()
+
+
+def set_brand_context(block: str) -> None:
+    """Set the brand DNA block for the current thread (Celery task)."""
+    _brand_ctx.block = block
+
+
+def clear_brand_context() -> None:
+    _brand_ctx.block = ""
+
+
+def _get_brand_context() -> str:
+    return getattr(_brand_ctx, "block", "")
 
 
 def get_client() -> anthropic.Anthropic:
@@ -32,6 +49,11 @@ def call(
     """
     settings = get_settings()
     model = model or settings.anthropic_model
+
+    # Prepend brand DNA block if available for this thread (Celery task)
+    brand_block = _get_brand_context()
+    if brand_block:
+        system_prompt = brand_block + "\n\n" + system_prompt
 
     system: list[dict] = []
     if cache_system:

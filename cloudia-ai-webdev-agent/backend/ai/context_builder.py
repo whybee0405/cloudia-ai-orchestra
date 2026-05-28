@@ -174,4 +174,14 @@ def build_project_context(client: object, project: object) -> str:
             project_id=getattr(project, "id", None),
         )
 
+    brand_dna_client_id = getattr(client, "brand_dna_client_id", None)
+    if brand_dna_client_id:
+        try:
+            from backend.utils.brand_dna import get_brand_context_block
+            block = get_brand_context_block(str(brand_dna_client_id))
+            if block:
+                context = block + "\n\n" + context
+        except Exception:
+            pass
+
     return context

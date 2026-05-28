@@ -34,6 +34,10 @@ SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
 NOTIFICATION_FROM_EMAIL: str = os.getenv("NOTIFICATION_FROM_EMAIL", "")
 CLOUDIA_ALERT_EMAIL: str = os.getenv("CLOUDIA_ALERT_EMAIL", "")
 
+# ── Brand DNA Service ─────────────────────────────────────────────────────────
+BRAND_DNA_SERVICE_URL: str = os.getenv("BRAND_DNA_SERVICE_URL", "http://localhost:8000")
+INTERNAL_API_SECRET: str = os.getenv("INTERNAL_API_SECRET", "")
+
 # ── App ───────────────────────────────────────────────────────────────────────
 ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")

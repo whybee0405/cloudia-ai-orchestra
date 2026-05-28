@@ -130,3 +130,38 @@ app.include_router(websocket.router)
 async def health() -> dict:
     """Liveness check — returns 200 if the API process is alive."""
     return {"status": "ok", "environment": settings.environment}
+
+
+# ---------------------------------------------------------------------------
+# Internal routes — consumed by Brand DNA Director agent
+# ---------------------------------------------------------------------------
+
+from fastapi import Header as _Header  # noqa: E402
+from sqlalchemy import func as _func, select as _select  # noqa: E402
+from backend.db.models import Client as _Client, Project as _Project  # noqa: E402
+from backend.db.session import get_session as _get_session  # noqa: E402
+
+
+def _verify_internal_secret(x_internal_secret: str = _Header(default="")) -> None:
+    if settings.internal_api_secret and x_internal_secret != settings.internal_api_secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+@app.get("/internal/health", tags=["internal"])
+async def internal_health() -> dict:
+    return {"status": "ok", "service": "webdev"}
+
+
+@app.get("/internal/summary", tags=["internal"], dependencies=[Depends(_verify_internal_secret)])
+async def internal_summary(db=Depends(_get_session)) -> dict:
+    total_clients = db.scalar(_select(_func.count()).select_from(_Client)) or 0
+    active_projects = db.scalar(
+        _select(_func.count()).select_from(_Project).where(_Project.status == "running")
+    ) or 0
+    total_projects = db.scalar(_select(_func.count()).select_from(_Project)) or 0
+    return {
+        "service": "webdev",
+        "total_clients": total_clients,
+        "active_projects": active_projects,
+        "total_projects": total_projects,
+    }

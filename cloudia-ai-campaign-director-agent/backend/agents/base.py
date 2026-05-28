@@ -50,7 +50,25 @@ class BaseAgent:
         self.db.refresh(task)
         self._task_record = task
         self.logger.info("Task %d started: campaign=%d", task.id, campaign_id)
+        self._load_brand_context(campaign_id)
         return task
+
+    def _load_brand_context(self, campaign_id: int) -> None:
+        """Fetch brand DNA for this campaign's client and set as thread-local context."""
+        try:
+            from backend.db.models import Campaign, Client
+            from backend.utils.brand_dna import get_brand_context_block
+            from backend.ai.claude import set_brand_context
+            campaign = self.db.get(Campaign, campaign_id)
+            if not campaign:
+                return
+            client = self.db.get(Client, campaign.client_id)
+            if client and client.brand_dna_client_id:
+                block = get_brand_context_block(str(client.brand_dna_client_id))
+                if block:
+                    set_brand_context(block)
+        except Exception as exc:
+            self.logger.debug("Brand context load skipped: %s", exc)
 
     def _complete_task(self, output_data: dict) -> None:
         if not self._task_record:

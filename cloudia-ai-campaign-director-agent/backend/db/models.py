@@ -25,6 +25,7 @@ class Client(Base):
     country = Column(String(100), default="South Africa")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=func.now())
+    brand_dna_client_id = Column(String(36))
 
     campaigns = relationship("Campaign", back_populates="client", cascade="all, delete-orphan")
     brand_guidelines = relationship("BrandGuidelines", back_populates="client", uselist=False)

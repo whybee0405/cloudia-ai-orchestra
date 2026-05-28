@@ -46,7 +46,7 @@ def build_client_context(account: Account, benchmarks: IndustryBenchmark | None)
 
     benchmark_section = _format_benchmarks(benchmarks, account.industry)
 
-    return f"""
+    context = f"""
 === CLIENT CONTEXT ===
 Client: {account.client_name}
 Industry: {_fmt_val(account.industry)}
@@ -90,6 +90,19 @@ All your recommendations must be:
 5. Structured as JSON where action output is required
 Do not hallucinate metrics. If data is missing, say so.
 """.strip()
+
+    # Prepend Brand DNA block if the account is linked to a Brand DNA client
+    brand_dna_client_id = getattr(account, "brand_dna_client_id", None)
+    if brand_dna_client_id:
+        try:
+            from utils.brand_dna import get_brand_context_block
+            block = get_brand_context_block(str(brand_dna_client_id))
+            if block:
+                context = block + "\n\n" + context
+        except Exception:
+            pass
+
+    return context
 
 
 def _format_benchmarks(benchmarks: IndustryBenchmark | None, industry: str | None) -> str:

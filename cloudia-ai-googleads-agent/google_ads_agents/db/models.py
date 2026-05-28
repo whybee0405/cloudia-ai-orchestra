@@ -77,6 +77,7 @@ class Account(Base):
         Timestamp, server_default=func.now()
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    brand_dna_client_id: Mapped[str | None] = mapped_column(String(36))
 
     # Relationships
     snapshots: Mapped[list["CampaignSnapshot"]] = relationship(
