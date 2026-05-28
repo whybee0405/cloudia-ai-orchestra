@@ -1,0 +1,392 @@
+services:
+
+  # ── Databases ────────────────────────────────────────────────────────────────
+
+  postgres-brand:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudia_brand_dna
+      POSTGRES_USER: cloudia
+      POSTGRES_PASSWORD: ${POSTGRES_BRAND_PASSWORD}
+    volumes:
+      - pgdata-brand:/var/lib/postgresql/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudia -d cloudia_brand_dna"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-campaigns:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudia_campaigns
+      POSTGRES_USER: cloudia
+      POSTGRES_PASSWORD: ${POSTGRES_CAMPAIGNS_PASSWORD}
+    volumes:
+      - pgdata-campaigns:/var/lib/postgresql/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudia -d cloudia_campaigns"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-ads:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudia_ads
+      POSTGRES_USER: cloudia
+      POSTGRES_PASSWORD: ${POSTGRES_ADS_PASSWORD}
+    volumes:
+      - pgdata-ads:/var/lib/postgresql/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudia -d cloudia_ads"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-webdev:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudia_webdev
+      POSTGRES_USER: cloudia
+      POSTGRES_PASSWORD: ${POSTGRES_WEBDEV_PASSWORD}
+    volumes:
+      - pgdata-webdev:/var/lib/postgresql/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudia -d cloudia_webdev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Brand DNA Service ────────────────────────────────────────────────────────
+
+  brand-dna-migrate:
+    build:
+      context: ./cloudia-ai-brand-dna-service
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_BRAND_PASSWORD}@postgres-brand:5432/cloudia_brand_dna
+    networks: [cloudia-net]
+    depends_on:
+      postgres-brand:
+        condition: service_healthy
+    restart: "no"
+
+  brand-dna:
+    build:
+      context: ./cloudia-ai-brand-dna-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_BRAND_PASSWORD}@postgres-brand:5432/cloudia_brand_dna
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      CAMPAIGNS_SERVICE_URL: http://campaigns-api:8000
+      ADS_SERVICE_URL: http://ads:8000
+      WEBDEV_SERVICE_URL: http://webdev-api:8000
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-brand:
+        condition: service_healthy
+      brand-dna-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Campaign Director ────────────────────────────────────────────────────────
+
+  campaigns-migrate:
+    build:
+      context: ./cloudia-ai-campaign-director-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_CAMPAIGNS_PASSWORD}@postgres-campaigns:5432/cloudia_campaigns
+    networks: [cloudia-net]
+    depends_on:
+      postgres-campaigns:
+        condition: service_healthy
+    restart: "no"
+
+  campaigns-api:
+    build:
+      context: ./cloudia-ai-campaign-director-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_CAMPAIGNS_PASSWORD}@postgres-campaigns:5432/cloudia_campaigns
+      REDIS_URL: redis://redis:6379/0
+      BRAND_DNA_SERVICE_URL: http://brand-dna:8000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      SECRET_KEY: ${CAMPAIGNS_SECRET_KEY}
+      ENCRYPTION_KEY: ${CAMPAIGNS_ENCRYPTION_KEY}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: cloudia-media
+      MINIO_SECURE: "false"
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
+      LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
+      TIKTOK_CLIENT_KEY: ${TIKTOK_CLIENT_KEY:-}
+      TIKTOK_CLIENT_SECRET: ${TIKTOK_CLIENT_SECRET:-}
+      TWITTER_CLIENT_ID: ${TWITTER_CLIENT_ID:-}
+      TWITTER_CLIENT_SECRET: ${TWITTER_CLIENT_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      OAUTH_CALLBACK_BASE_URL: ${OAUTH_CALLBACK_BASE_URL:-https://your-domain.com/api/campaigns}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-campaigns:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      campaigns-migrate:
+        condition: service_completed_successfully
+      brand-dna:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  campaigns-worker:
+    build:
+      context: ./cloudia-ai-campaign-director-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["celery", "-A", "backend.worker.celery_app", "worker", "-l", "info", "-Q", "default", "-c", "4"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_CAMPAIGNS_PASSWORD}@postgres-campaigns:5432/cloudia_campaigns
+      REDIS_URL: redis://redis:6379/0
+      BRAND_DNA_SERVICE_URL: http://brand-dna:8000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      ENCRYPTION_KEY: ${CAMPAIGNS_ENCRYPTION_KEY}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: cloudia-media
+      MINIO_SECURE: "false"
+    networks: [cloudia-net]
+    depends_on:
+      redis:
+        condition: service_healthy
+      campaigns-api:
+        condition: service_healthy
+
+  # ── Google Ads Agent ─────────────────────────────────────────────────────────
+
+  ads-migrate:
+    build:
+      context: ./cloudia-ai-googleads-agent/google_ads_agents
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_ADS_PASSWORD}@postgres-ads:5432/cloudia_ads
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      API_SECRET_KEY: ${ADS_SECRET_KEY}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-ads:
+        condition: service_healthy
+    restart: "no"
+
+  ads:
+    build:
+      context: ./cloudia-ai-googleads-agent/google_ads_agents
+    command: ["python", "main.py"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_ADS_PASSWORD}@postgres-ads:5432/cloudia_ads
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      API_SECRET_KEY: ${ADS_SECRET_KEY}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      GOOGLE_ADS_DEVELOPER_TOKEN: ${GOOGLE_ADS_DEVELOPER_TOKEN:-}
+      GOOGLE_ADS_CLIENT_ID: ${GOOGLE_ADS_CLIENT_ID:-}
+      GOOGLE_ADS_CLIENT_SECRET: ${GOOGLE_ADS_CLIENT_SECRET:-}
+      GOOGLE_ADS_REFRESH_TOKEN: ${GOOGLE_ADS_REFRESH_TOKEN:-}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-ads:
+        condition: service_healthy
+      ads-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── WebDev Agent ─────────────────────────────────────────────────────────────
+
+  webdev-migrate:
+    build:
+      context: ./cloudia-ai-webdev-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_WEBDEV_PASSWORD}@postgres-webdev:5432/cloudia_webdev
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SECRET_KEY: ${WEBDEV_SECRET_KEY}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-webdev:
+        condition: service_healthy
+    restart: "no"
+
+  webdev-api:
+    build:
+      context: ./cloudia-ai-webdev-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["uvicorn", "backend.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_WEBDEV_PASSWORD}@postgres-webdev:5432/cloudia_webdev
+      REDIS_URL: redis://redis:6379/1
+      BRAND_DNA_SERVICE_URL: http://brand-dna:8000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      SECRET_KEY: ${WEBDEV_SECRET_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
+    networks: [cloudia-net]
+    depends_on:
+      postgres-webdev:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      webdev-migrate:
+        condition: service_completed_successfully
+      brand-dna:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  webdev-worker:
+    build:
+      context: ./cloudia-ai-webdev-agent
+      dockerfile: docker/Dockerfile.api
+    command: ["celery", "-A", "backend.worker.celery_app", "worker", "-l", "info", "-Q", "default", "-c", "2"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cloudia:${POSTGRES_WEBDEV_PASSWORD}@postgres-webdev:5432/cloudia_webdev
+      REDIS_URL: redis://redis:6379/1
+      BRAND_DNA_SERVICE_URL: http://brand-dna:8000
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      SECRET_KEY: ${WEBDEV_SECRET_KEY}
+    networks: [cloudia-net]
+    depends_on:
+      redis:
+        condition: service_healthy
+      webdev-api:
+        condition: service_healthy
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./cloudia-ai-frontend
+      args:
+        VITE_API_BASE: ""
+    restart: unless-stopped
+    networks: [cloudia-net]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health.txt 2>/dev/null || curl -sf http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Nginx Gateway ─────────────────────────────────────────────────────────────
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/cloudia.conf.template:/etc/nginx/templates/cloudia.conf.template:ro
+    environment:
+      WEBDEV_SECRET_KEY: ${WEBDEV_SECRET_KEY}
+      # Only substitute this variable; leave all nginx $vars untouched
+      NGINX_ENVSUBST_TEMPLATE_VARS: WEBDEV_SECRET_KEY
+    networks: [cloudia-net]
+    depends_on:
+      - frontend
+      - brand-dna
+      - campaigns-api
+      - ads
+      - webdev-api
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+
+volumes:
+  pgdata-brand:
+  pgdata-campaigns:
+  pgdata-ads:
+  pgdata-webdev:
+  redis-data:
+  minio-data:
+
+# ── Network ───────────────────────────────────────────────────────────────────
+
+networks:
+  cloudia-net:
+    driver: bridge

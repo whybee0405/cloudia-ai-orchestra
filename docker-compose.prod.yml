@@ -1,0 +1,71 @@
+# Production overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Adds SSL via Certbot, resource limits, and production-hardened settings.
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/cloudia.conf.template:/etc/nginx/templates/cloudia.conf.template:ro
+      - ./nginx/ssl.conf.template:/etc/nginx/templates/ssl.conf.template:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+    environment:
+      WEBDEV_SECRET_KEY: ${WEBDEV_SECRET_KEY}
+      NGINX_ENVSUBST_TEMPLATE_VARS: WEBDEV_SECRET_KEY
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+
+  brand-dna:
+    environment:
+      ENVIRONMENT: production
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  campaigns-api:
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  campaigns-worker:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2g
+
+  ads:
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  webdev-api:
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  webdev-worker:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2g
+
+volumes:
+  certbot-webroot:
+  certbot-certs:
