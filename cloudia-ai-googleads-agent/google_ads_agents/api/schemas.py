@@ -87,6 +87,21 @@ class BaselineRequest(BaseModel):
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 
+class AccountCreate(BaseModel):
+    """Body for POST /accounts — register a new Google Ads account."""
+
+    client_name: str
+    customer_id: str
+    mcc_id: str
+    industry: str | None = None
+    business_type: str | None = None
+    budget_sensitivity: str | None = None
+    monthly_ad_spend: float | None = None
+    primary_kpi: str | None = None
+    primary_kpi_target: float | None = None
+    brand_dna_client_id: str | None = None
+
+
 class AccountResponse(BaseModel):
     """Serialised Account row returned by GET /accounts and related routes."""
 
@@ -95,10 +110,22 @@ class AccountResponse(BaseModel):
     id: int
     client_name: str
     customer_id: str
+    mcc_id: str
     status: str
     industry: str | None = None
+    business_type: str | None = None
+    budget_sensitivity: str | None = None
+    monthly_ad_spend: float | None = None
     primary_kpi: str | None = None
     primary_kpi_target: float | None = None
+    secondary_kpi: str | None = None
+    secondary_kpi_target: float | None = None
+    baseline_ctr: float | None = None
+    baseline_cvr: float | None = None
+    baseline_cpc: float | None = None
+    baseline_cpa: float | None = None
+    baseline_roas: float | None = None
+    brand_dna_client_id: str | None = None
 
 
 class QueueItemResponse(BaseModel):

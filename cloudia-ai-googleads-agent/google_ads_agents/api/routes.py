@@ -29,6 +29,7 @@ import config
 from agents.creator import CreatorAgent
 from ai.claude import ClaudeClient
 from api.schemas import (
+    AccountCreate,
     AccountResponse,
     AuditLogResponse,
     BaselineRequest,
@@ -105,6 +106,42 @@ def _get_queue_item_or_404(item_id: int, db: Session) -> ApprovalQueue:
 
 
 # ── Account routes ─────────────────────────────────────────────────────────────
+
+@router.get(
+    "/accounts/by-brand-dna/{brand_dna_client_id}",
+    response_model=AccountResponse,
+    summary="Find account linked to a Brand DNA client UUID",
+    tags=["Accounts"],
+)
+def get_account_by_brand_dna(
+    brand_dna_client_id: str,
+    db: Session = Depends(get_db),
+) -> Account:
+    stmt = select(Account).where(Account.brand_dna_client_id == brand_dna_client_id)
+    account = db.scalars(stmt).first()
+    if account is None:
+        raise HTTPException(status_code=404, detail="No account linked to this Brand DNA client")
+    return account
+
+
+@router.post(
+    "/accounts",
+    response_model=AccountResponse,
+    status_code=201,
+    summary="Register a new Google Ads account",
+    tags=["Accounts"],
+)
+def create_account(
+    body: AccountCreate,
+    db: Session = Depends(get_db),
+) -> Account:
+    account = Account(**body.model_dump())
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    logger.info("[routes] create_account: created account id=%d (%s)", account.id, account.client_name)
+    return account
+
 
 @router.get(
     "/accounts",
