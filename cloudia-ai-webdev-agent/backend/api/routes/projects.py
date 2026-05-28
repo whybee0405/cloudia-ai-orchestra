@@ -111,6 +111,7 @@ def _client_to_out(client: Client) -> ClientOut:
         website_url=client.website_url,
         social_links=client.social_links,
         notes=client.notes,
+        brand_dna_client_id=getattr(client, 'brand_dna_client_id', None),
         created_at=client.created_at,
     )
 
@@ -355,12 +356,30 @@ def create_client(
         website_url=data.website_url,
         social_links=data.social_links,
         notes=data.notes,
+        brand_dna_client_id=data.brand_dna_client_id,
     )
     db.add(client)
     db.commit()
     db.refresh(client)
 
     log.info("client_created", client_id=client.id, name=data.name)
+    return _client_to_out(client)
+
+
+@router.get("/clients/by-brand-dna/{brand_dna_client_id}", response_model=ClientOut)
+def get_client_by_brand_dna(
+    brand_dna_client_id: str,
+    db: Session = Depends(get_session),
+) -> ClientOut:
+    """Look up a WebDev client by its Brand DNA UUID."""
+    client = db.scalars(
+        select(Client).where(Client.brand_dna_client_id == brand_dna_client_id)
+    ).first()
+    if client is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No WebDev client linked to this Brand DNA client",
+        )
     return _client_to_out(client)
 
 

@@ -37,6 +37,7 @@ class ClientCreate(BaseModel):
     website_url: Optional[str] = None
     social_links: Optional[dict] = None
     notes: Optional[str] = None
+    brand_dna_client_id: Optional[str] = None
 
 
 class ClientOut(ClientCreate):

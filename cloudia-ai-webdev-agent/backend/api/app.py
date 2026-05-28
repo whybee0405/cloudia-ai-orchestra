@@ -95,25 +95,25 @@ from backend.api import websocket                            # noqa: E402
 
 app.include_router(
     projects.router,
-    prefix="/api/projects",
+    prefix="/api/webdev/projects",
     tags=["projects"],
     dependencies=[Depends(verify_api_key)],
 )
 app.include_router(
     approvals.router,
-    prefix="/api/approvals",
+    prefix="/api/webdev/approvals",
     tags=["approvals"],
     dependencies=[Depends(verify_api_key)],
 )
 app.include_router(
     content.router,
-    prefix="/api/content",
+    prefix="/api/webdev/content",
     tags=["content"],
     dependencies=[Depends(verify_api_key)],
 )
 app.include_router(
     settings_router.router,
-    prefix="/api/settings",
+    prefix="/api/webdev/settings",
     tags=["settings"],
     dependencies=[Depends(verify_api_key)],
 )
