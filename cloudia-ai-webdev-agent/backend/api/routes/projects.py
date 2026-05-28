@@ -383,6 +383,64 @@ def get_client_by_brand_dna(
     return _client_to_out(client)
 
 
+@router.get("/clients/by-brand-dna/{brand_dna_client_id}/summary")
+def get_client_summary_by_brand_dna(
+    brand_dna_client_id: str,
+    db: Session = Depends(get_session),
+) -> dict:
+    """Compact state summary for the Director Agent."""
+    from sqlalchemy import func as _func  # noqa: PLC0415
+    from backend.db.models import ApprovalGate, ProjectStatus  # noqa: PLC0415
+
+    client = db.scalars(
+        select(Client).where(Client.brand_dna_client_id == brand_dna_client_id)
+    ).first()
+    if client is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No WebDev client linked to this Brand DNA client",
+        )
+
+    total_projects = db.scalar(
+        select(_func.count()).select_from(Project).where(Project.client_id == client.id)
+    ) or 0
+    active_projects = db.scalar(
+        select(_func.count()).select_from(Project).where(
+            Project.client_id == client.id,
+            Project.status == ProjectStatus.RUNNING,
+        )
+    ) or 0
+    completed_projects = db.scalar(
+        select(_func.count()).select_from(Project).where(
+            Project.client_id == client.id,
+            Project.status == ProjectStatus.COMPLETED,
+        )
+    ) or 0
+    pending_gates = db.scalar(
+        select(_func.count()).select_from(ApprovalGate)
+        .join(Project, ApprovalGate.project_id == Project.id)
+        .where(Project.client_id == client.id, ApprovalGate.status == "pending")
+    ) or 0
+
+    latest = db.scalars(
+        select(Project)
+        .where(Project.client_id == client.id)
+        .order_by(Project.created_at.desc())
+    ).first()
+
+    return {
+        "service": "webdev",
+        "connected": True,
+        "client_name": client.name,
+        "total_projects": total_projects,
+        "active_projects": active_projects,
+        "completed_projects": completed_projects,
+        "pending_gates": pending_gates,
+        "last_project_platform": latest.platform if latest else None,
+        "last_project_status": latest.status if latest else None,
+    }
+
+
 @router.get("/clients/", response_model=list[ClientOut])
 def list_clients(
     db: Session = Depends(get_session),

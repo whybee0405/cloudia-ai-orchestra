@@ -124,6 +124,49 @@ def get_account_by_brand_dna(
     return account
 
 
+@router.get(
+    "/accounts/by-brand-dna/{brand_dna_client_id}/summary",
+    summary="Compact state summary for the Director Agent",
+    tags=["Accounts"],
+)
+def get_account_summary_by_brand_dna(
+    brand_dna_client_id: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    stmt = select(Account).where(Account.brand_dna_client_id == brand_dna_client_id)
+    account = db.scalars(stmt).first()
+    if account is None:
+        raise HTTPException(status_code=404, detail="No account linked to this Brand DNA client")
+
+    pending_items = db.scalar(
+        select(func.count()).select_from(ApprovalQueue)
+        .where(ApprovalQueue.account_id == account.id, ApprovalQueue.status == "pending")
+    ) or 0
+    from datetime import timedelta
+    week_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+    recent_anomalies = db.scalar(
+        select(func.count()).select_from(AuditLog)
+        .where(AuditLog.account_id == account.id, AuditLog.run_time >= week_ago)
+    ) or 0
+    critical_anomalies = db.scalar(
+        select(func.count()).select_from(AuditLog)
+        .where(AuditLog.account_id == account.id, AuditLog.run_time >= week_ago, AuditLog.severity == "CRITICAL")
+    ) or 0
+
+    return {
+        "service": "google-ads",
+        "connected": True,
+        "account_status": account.status,
+        "customer_id": account.customer_id,
+        "pending_queue_items": pending_items,
+        "anomalies_last_7d": recent_anomalies,
+        "critical_anomalies_last_7d": critical_anomalies,
+        "baseline_roas": float(account.baseline_roas) if account.baseline_roas else None,
+        "primary_kpi": account.primary_kpi,
+        "primary_kpi_target": float(account.primary_kpi_target) if account.primary_kpi_target else None,
+    }
+
+
 @router.post(
     "/accounts",
     response_model=AccountResponse,

@@ -50,15 +50,15 @@ def run_director(client_id: UUID, client_name: str, has_brand_dna: bool, persona
     cid = str(client_id)
 
     campaigns_summary = _fetch_summary(
-        f"{settings.campaigns_service_url}/api/campaigns/clients/{cid}/summary",
+        f"{settings.campaigns_service_url}/api/campaigns/clients/by-brand-dna/{cid}/summary",
         settings.internal_api_secret,
     )
     ads_summary = _fetch_summary(
-        f"{settings.ads_service_url}/api/ads/clients/{cid}/summary",
+        f"{settings.ads_service_url}/api/ads/accounts/by-brand-dna/{cid}/summary",
         settings.internal_api_secret,
     )
     webdev_summary = _fetch_summary(
-        f"{settings.webdev_service_url}/api/webdev/clients/{cid}/summary",
+        f"{settings.webdev_service_url}/api/webdev/projects/clients/by-brand-dna/{cid}/summary",
         settings.internal_api_secret,
     )
 

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.api.schemas import (
@@ -11,7 +11,7 @@ from backend.api.schemas import (
     ClientRead,
     PlatformAccountRead,
 )
-from backend.db.models import BrandGuidelines, Client, PlatformAccount
+from backend.db.models import ApprovalGate, BrandGuidelines, Campaign, Client, PlatformAccount
 from backend.db.session import get_db
 
 router = APIRouter(tags=["settings"])
@@ -25,6 +25,47 @@ def get_client_by_brand_dna(brand_dna_client_id: str, db: Session = Depends(get_
     if not client:
         raise HTTPException(404, "No Campaign Director client linked to this Brand DNA client")
     return client
+
+
+@router.get("/clients/by-brand-dna/{brand_dna_client_id}/summary")
+def get_client_summary_by_brand_dna(brand_dna_client_id: str, db: Session = Depends(get_db)) -> dict:
+    client = db.execute(
+        select(Client).where(Client.brand_dna_client_id == brand_dna_client_id)
+    ).scalar_one_or_none()
+    if not client:
+        raise HTTPException(404, "No Campaign Director client linked to this Brand DNA client")
+
+    total_campaigns = db.scalar(
+        select(func.count()).select_from(Campaign).where(Campaign.client_id == client.id)
+    ) or 0
+    active_campaigns = db.scalar(
+        select(func.count()).select_from(Campaign).where(
+            Campaign.client_id == client.id,
+            Campaign.status.in_(["running", "active"]),
+        )
+    ) or 0
+    pending_gates = db.scalar(
+        select(func.count()).select_from(ApprovalGate)
+        .join(Campaign, ApprovalGate.campaign_id == Campaign.id)
+        .where(Campaign.client_id == client.id, ApprovalGate.status == "pending")
+    ) or 0
+
+    latest = db.execute(
+        select(Campaign)
+        .where(Campaign.client_id == client.id)
+        .order_by(Campaign.created_at.desc())
+    ).scalars().first()
+
+    return {
+        "service": "campaigns",
+        "connected": True,
+        "client_name": client.name,
+        "total_campaigns": total_campaigns,
+        "active_campaigns": active_campaigns,
+        "pending_approval_gates": pending_gates,
+        "last_campaign_status": latest.status if latest else None,
+        "last_campaign_platforms": latest.platforms if latest else [],
+    }
 
 
 @router.get("/clients", response_model=list[ClientRead])
