@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Suggestion } from '@/shared/types'
 import { Button } from './Button'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ArrowRight, Megaphone, Globe, BarChart2, Dna } from 'lucide-react'
+import { ArrowRight, Megaphone, Globe, BarChart2, Dna } from 'lucide-react'
 
 const priorityConfig = {
   1: { label: 'Critical', className: 'border-l-red-500 bg-red-50/50' },

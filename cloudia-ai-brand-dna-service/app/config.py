@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     environment: str = "development"
     allowed_origins: str = "http://localhost:3000"
 
+    minio_endpoint: str = "minio:9000"
+    minio_root_user: str = ""
+    minio_root_password: str = ""
+    minio_bucket: str = "cloudia-brand-assets"
+    minio_secure: bool = False
+
     model_config = {"env_file": ".env", "case_sensitive": False}
 
 

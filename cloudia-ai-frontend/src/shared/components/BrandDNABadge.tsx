@@ -1,4 +1,4 @@
-import type { BrandDNA, ICPPersona } from '@/shared/types'
+import type { BrandDNA } from '@/shared/types'
 import { Palette, MessageSquare, Users } from 'lucide-react'
 
 interface BrandDNABadgeProps {

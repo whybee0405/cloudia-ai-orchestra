@@ -29,14 +29,17 @@ export function Step2Voice({ data, onChange, onNext, onBack, isSaving }: Props) 
       </CardHeader>
       <CardBody className="space-y-5">
         <Input
-          label="Tagline"
+          label="Tagline *"
           value={data.tagline}
           onChange={e => onChange({ tagline: e.target.value })}
           placeholder="e.g. Where every meal tells a story"
         />
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-700">Tone of Voice</label>
+          <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-slate-700">Tone of Voice</label>
+            <span className="text-xs font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">Required</span>
+          </div>
           <div className="grid grid-cols-5 gap-2">
             {TONES.map(t => (
               <button

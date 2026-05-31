@@ -5,26 +5,19 @@
 
 services:
 
+  # SSL termination is handled by the ERP nginx (cloudia-erp) which is the
+  # single VPS gateway on ports 80/443. This nginx handles only internal
+  # service routing within the cloudia-net Docker network, accessible at
+  # 127.0.0.1:8082 on the host for ERP nginx to proxy to.
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8080:80"
     volumes:
       - ./nginx/cloudia.conf.template:/etc/nginx/templates/cloudia.conf.template:ro
-      - ./nginx/ssl.conf.template:/etc/nginx/templates/ssl.conf.template:ro
-      - certbot-webroot:/var/www/certbot:ro
-      - certbot-certs:/etc/letsencrypt:ro
     environment:
       WEBDEV_SECRET_KEY: ${WEBDEV_SECRET_KEY}
       NGINX_ENVSUBST_TEMPLATE_VARS: WEBDEV_SECRET_KEY
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - certbot-webroot:/var/www/certbot
-      - certbot-certs:/etc/letsencrypt
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
 
   brand-dna:
     environment:
@@ -66,6 +59,4 @@ services:
         limits:
           memory: 2g
 
-volumes:
-  certbot-webroot:
-  certbot-certs:
+volumes: {}

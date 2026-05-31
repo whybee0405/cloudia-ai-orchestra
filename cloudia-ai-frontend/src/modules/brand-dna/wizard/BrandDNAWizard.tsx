@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { saveBrandDNA, updateClient } from '@/api/brand-dna'
-import type { BrandDNAUpdate, PersonaCreate } from '@/shared/types'
+import { saveBrandDNA, updateClient, generateBrandDNA } from '@/api/brand-dna'
+import type { BrandDNA, BrandDNAUpdate, PersonaCreate } from '@/shared/types'
+import { Step0Templates } from './Step0Templates'
 import { Step1Business } from './Step1Business'
 import { Step2Voice } from './Step2Voice'
 import { Step3Visual } from './Step3Visual'
@@ -63,7 +64,7 @@ export function BrandDNAWizard() {
   const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>(DEFAULT)
 
   const update = (patch: Partial<WizardData>) => setData(d => ({ ...d, ...patch }))
@@ -81,6 +82,27 @@ export function BrandDNAWizard() {
       location: data.location || undefined,
       founded_year: data.founded_year ? parseInt(data.founded_year) : undefined,
     }),
+  })
+
+  const generateMutation = useMutation({
+    mutationFn: (prompt: string) => generateBrandDNA(clientId!, prompt),
+    onSuccess: (dna: BrandDNA) => {
+      update({
+        tagline: dna.tagline ?? '',
+        tone: dna.tone ?? '',
+        language_style: dna.language_style ?? '',
+        personality_traits: dna.personality_traits ?? [],
+        visual_style: dna.visual_style ?? '',
+        primary_color: dna.primary_color ?? '#6366f1',
+        accent_color: dna.accent_color ?? '',
+        heading_font: dna.heading_font ?? '',
+        body_font: dna.body_font ?? '',
+        usps: dna.usps ?? [],
+        pain_points_addressed: dna.pain_points_addressed ?? [],
+        key_messages: dna.key_messages ?? [],
+        differentiators: dna.differentiators ?? [],
+      })
+    },
   })
 
   const next = async () => {
@@ -119,6 +141,15 @@ export function BrandDNAWizard() {
 
   const isSaving = saveDNA.isPending || saveClientInfo.isPending
 
+  if (step === 0) {
+    return (
+      <Step0Templates
+        onSelect={defaults => { update(defaults); setStep(1) }}
+        onSkip={() => setStep(1)}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-2xl mx-auto">
@@ -150,9 +181,18 @@ export function BrandDNAWizard() {
         </div>
 
         {/* Step content */}
-        {step === 1 && <Step1Business data={data} onChange={update} onNext={next} isSaving={isSaving} />}
+        {step === 1 && (
+          <Step1Business
+            data={data}
+            onChange={update}
+            onNext={next}
+            isSaving={isSaving}
+            onGenerate={(prompt) => generateMutation.mutateAsync(prompt)}
+            isGenerating={generateMutation.isPending}
+          />
+        )}
         {step === 2 && <Step2Voice data={data} onChange={update} onNext={next} onBack={() => setStep(1)} isSaving={isSaving} />}
-        {step === 3 && <Step3Visual data={data} onChange={update} onNext={next} onBack={() => setStep(2)} isSaving={isSaving} />}
+        {step === 3 && <Step3Visual clientId={clientId!} data={data} onChange={update} onNext={next} onBack={() => setStep(2)} isSaving={isSaving} />}
         {step === 4 && <Step4Messages data={data} onChange={update} onNext={next} onBack={() => setStep(3)} isSaving={isSaving} />}
         {step === 5 && <Step5Personas clientId={clientId!} data={data} onChange={update} onNext={next} onBack={() => setStep(4)} isSaving={isSaving} />}
         {step === 6 && <Step6Review clientId={clientId!} data={data} onFinish={finish} onBack={() => setStep(5)} />}

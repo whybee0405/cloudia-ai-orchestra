@@ -111,7 +111,7 @@ export function Step6Review({ clientId, onFinish, onBack }: Props) {
                 <div key={i} className="border border-slate-200 rounded-lg p-3 space-y-1">
                   <p className="text-xs font-semibold text-slate-700 capitalize">{s.field.replace(/_/g, ' ')}</p>
                   <p className="text-xs text-slate-500">{s.reasoning}</p>
-                  {s.suggested_value && (
+                  {Boolean(s.suggested_value) && (
                     <p className="text-xs text-brand-700 bg-brand-50 px-2 py-1 rounded">
                       Suggested: {Array.isArray(s.suggested_value) ? s.suggested_value.join(', ') : String(s.suggested_value)}
                     </p>

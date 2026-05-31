@@ -1,12 +1,18 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Client, BrandDNA
 from app.schemas import BrandDNAUpdate, BrandDNAResponse, EnrichmentResponse
 from app.agents.enrichment import run_enrichment
+from app.agents.generator import generate_brand_dna
+
+
+class GenerateRequest(BaseModel):
+    prompt: str
 
 router = APIRouter(prefix="/api/clients/{client_id}/brand-dna", tags=["brand-dna"])
 
@@ -37,6 +43,27 @@ def save_brand_dna(client_id: UUID, body: BrandDNAUpdate, db: Session = Depends(
         dna.updated_at = datetime.now(timezone.utc)
     else:
         dna = BrandDNA(client_id=client_id, **body.model_dump(exclude_none=True))
+        db.add(dna)
+
+    db.commit()
+    db.refresh(dna)
+    return dna
+
+
+@router.post("/generate", response_model=BrandDNAResponse)
+def generate_and_save_brand_dna(client_id: UUID, body: GenerateRequest, db: Session = Depends(get_db)):
+    client = _get_client_or_404(client_id, db)
+    generated = generate_brand_dna(body.prompt)
+
+    update = BrandDNAUpdate(**{k: v for k, v in generated.items() if v is not None})
+
+    if client.brand_dna:
+        dna = client.brand_dna
+        for field, value in update.model_dump(exclude_none=True).items():
+            setattr(dna, field, value)
+        dna.updated_at = datetime.now(timezone.utc)
+    else:
+        dna = BrandDNA(client_id=client_id, **update.model_dump(exclude_none=True))
         db.add(dna)
 
     db.commit()

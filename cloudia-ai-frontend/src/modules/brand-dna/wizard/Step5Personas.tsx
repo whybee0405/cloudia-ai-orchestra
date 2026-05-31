@@ -6,7 +6,6 @@ import { Card, CardBody, CardHeader } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input, TagInput } from '@/shared/components/Input'
 import { Users, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import type { WizardData } from './BrandDNAWizard'
 
 interface Props {

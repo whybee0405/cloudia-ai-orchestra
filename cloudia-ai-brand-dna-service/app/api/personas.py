@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import Client, ICPPersona
 from app.schemas import PersonaCreate, PersonaUpdate, PersonaResponse
 from app.data.persona_templates import TEMPLATES, INDUSTRY_LABELS
+from app.agents.persona_suggester import suggest_personas
 
 router = APIRouter(prefix="/api/clients/{client_id}/personas", tags=["personas"])
 
@@ -67,6 +68,21 @@ def delete_persona(client_id: UUID, persona_id: int, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail="Persona not found")
     db.delete(persona)
     db.commit()
+
+
+@router.post("/suggest")
+def suggest_persona_archetypes(client_id: UUID, db: Session = Depends(get_db)):
+    client = _get_client_or_404(client_id, db)
+    dna = client.brand_dna
+    archetypes = suggest_personas(
+        client_name=client.name,
+        industry=client.industry,
+        tagline=dna.tagline if dna else None,
+        tone=dna.tone if dna else None,
+        usps=dna.usps or [] if dna else [],
+        key_messages=dna.key_messages or [] if dna else [],
+    )
+    return {"archetypes": archetypes}
 
 
 @router.get("/templates")

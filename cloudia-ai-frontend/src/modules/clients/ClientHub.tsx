@@ -8,7 +8,9 @@ import { BrandDNABadge } from '@/shared/components/BrandDNABadge'
 import { SuggestionCard } from '@/shared/components/SuggestionCard'
 import { PageLoader } from '@/shared/components/LoadingSpinner'
 import { Badge } from '@/shared/components/Badge'
-import { ArrowLeft, ArrowUpRight, Megaphone, BarChart2, Globe, Dna, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Megaphone, BarChart2, Globe, Dna, RefreshCw, Sparkles } from 'lucide-react'
+import { CompletenessRing } from '@/shared/components/CompletenessRing'
+import { getBrandDNAScore } from '@/lib/brand-dna-score'
 
 export function ClientHub() {
   const { clientId } = useParams<{ clientId: string }>()
@@ -27,6 +29,9 @@ export function ClientHub() {
 
   if (isLoading) return <PageLoader />
   if (!client) return <div className="p-8 text-sm text-red-600">Client not found</div>
+
+  const { score: dnaScore, details: dnaDetails } = getBrandDNAScore(client, brandDna, personas?.length ?? 0)
+  const missingRequired = dnaDetails.filter(d => d.required && !d.done)
 
   const services = [
     {
@@ -109,14 +114,17 @@ export function ClientHub() {
                   <Dna className="w-4 h-4 text-slate-400" />
                   <h2 className="text-sm font-semibold text-slate-700">Brand DNA</h2>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(client.has_brand_dna ? `/clients/${id}/brand-dna` : `/clients/${id}/brand-dna/setup`)}
-                >
-                  {client.has_brand_dna ? 'Edit' : 'Set Up'}
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {brandDna && <CompletenessRing score={dnaScore} size={36} strokeWidth={3} />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(client.has_brand_dna ? `/clients/${id}/brand-dna` : `/clients/${id}/brand-dna/setup`)}
+                  >
+                    {client.has_brand_dna ? 'Edit' : 'Set Up'}
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardBody>
@@ -139,12 +147,31 @@ export function ClientHub() {
                       </div>
                     </div>
                   )}
+                  {/* Enhance nudge — shown when score < 70% */}
+                  {dnaScore < 70 && missingRequired.length > 0 && (
+                    <div className="mt-1 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-semibold text-amber-800 mb-1">Complete your Brand DNA</p>
+                          <p className="text-xs text-amber-700">
+                            Still needed: {missingRequired.map(d => d.label).join(', ')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/clients/${id}/brand-dna/wizard`)}
+                          className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                        >
+                          <Sparkles className="w-3 h-3" /> Enhance
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-sm text-slate-500 mb-3">Brand DNA not set up yet.</p>
                   <Button size="sm" onClick={() => navigate(`/clients/${id}/brand-dna/setup`)}>
-                    Start Brand DNA Wizard
+                    <Sparkles className="w-3.5 h-3.5" /> Set Up Brand DNA
                   </Button>
                 </div>
               )}

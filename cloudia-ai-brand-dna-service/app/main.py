@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("CloudIA Brand DNA Service starting")
+    try:
+        from app.media import storage
+        storage.ensure_bucket()
+        logger.info("MinIO bucket ready")
+    except Exception as exc:
+        logger.warning("MinIO not available at startup: %s", exc)
     yield
     logger.info("CloudIA Brand DNA Service shutting down")
 

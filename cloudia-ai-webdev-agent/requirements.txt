@@ -18,5 +18,5 @@ websockets==12.0
 aiofiles==23.2.1
 pydantic-settings==2.3.1
 ShopifyAPI==12.4.0
-wordpress-api==2.1.0
+wordpress-api==1.2.9
 python-multipart==0.0.9

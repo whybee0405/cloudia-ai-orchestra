@@ -14,5 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./backend/
 COPY alembic.ini .
+COPY docker/docker-entrypoint.sh ./docker-entrypoint.sh
 
 EXPOSE 8000
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

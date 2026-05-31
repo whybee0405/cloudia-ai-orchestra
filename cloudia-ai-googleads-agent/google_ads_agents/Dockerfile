@@ -4,8 +4,7 @@ WORKDIR /app
 
 # Install system dependencies for psycopg2
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev \
-    gcc \
+    libpq-dev gcc curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies first (layer cache)
@@ -20,4 +19,5 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8000
 
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["python", "main.py"]

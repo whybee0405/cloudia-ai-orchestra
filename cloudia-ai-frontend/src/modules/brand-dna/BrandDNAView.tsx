@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getBrandDNA, listPersonas, saveBrandDNA } from '@/api/brand-dna'
+import { useQuery } from '@tanstack/react-query'
+import { getBrandDNA, listPersonas } from '@/api/brand-dna'
 import { useClient } from '@/shared/hooks/useClient'
 import { Card, CardBody, CardHeader } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
@@ -27,7 +27,7 @@ export function BrandDNAView() {
         </button>
         <div className="text-center py-20">
           <p className="text-sm text-slate-500 mb-4">Brand DNA hasn't been set up yet.</p>
-          <Button onClick={() => navigate(`/clients/${id}/brand-dna/setup`)}>Start Wizard</Button>
+          <Button onClick={() => navigate(`/clients/${id}/brand-dna/setup`)}>Set Up Brand DNA</Button>
         </div>
       </div>
     )
@@ -44,9 +44,14 @@ export function BrandDNAView() {
           <h1 className="text-2xl font-bold text-slate-900">Brand DNA</h1>
           <p className="text-sm text-slate-500">{client?.name}</p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => navigate(`/clients/${id}/brand-dna/setup`)}>
-          <Edit3 className="w-3.5 h-3.5" /> Edit in Wizard
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => navigate(`/clients/${id}/brand-dna/review`)}>
+            <Edit3 className="w-3.5 h-3.5" /> Edit Inline
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${id}/brand-dna/wizard`)}>
+            Full Wizard
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-5">
