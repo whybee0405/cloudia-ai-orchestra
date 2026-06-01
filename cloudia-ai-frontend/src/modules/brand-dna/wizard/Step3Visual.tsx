@@ -74,7 +74,7 @@ export function Step3Visual({ clientId, data, onChange, onNext, onBack, isSaving
         {/* Visual style */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">Visual Style</label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {VISUAL_STYLES.map(vs => (
               <button
                 key={vs.value}
@@ -100,7 +100,7 @@ export function Step3Visual({ clientId, data, onChange, onNext, onBack, isSaving
             <label className="block text-sm font-medium text-slate-700">Brand Colours</label>
             <span className="text-xs font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">Primary required</span>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-slate-500">Primary</label>
               <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2 py-1.5">
@@ -142,7 +142,7 @@ export function Step3Visual({ clientId, data, onChange, onNext, onBack, isSaving
         </div>
 
         {/* Fonts */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Heading Font</label>
             <select

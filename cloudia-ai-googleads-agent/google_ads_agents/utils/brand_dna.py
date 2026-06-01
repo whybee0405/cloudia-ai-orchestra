@@ -28,7 +28,10 @@ def get_brand_context_block(brand_dna_client_id: str) -> str:
         url = f"{config.BRAND_DNA_SERVICE_URL}/internal/clients/{brand_dna_client_id}/brand-context"
         req = urllib.request.Request(
             url,
-            headers={"X-Internal-Secret": config.INTERNAL_API_SECRET},
+            headers={
+                "X-Internal-Secret": config.INTERNAL_API_SECRET,
+                "X-Service-Name": "google-ads",
+            },
         )
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read())

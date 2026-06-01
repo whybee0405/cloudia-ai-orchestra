@@ -574,6 +574,61 @@ def list_audit_log(
     return entries
 
 
+# ── Reporting routes ──────────────────────────────────────────────────────────
+
+@router.get("/reporting/agent-costs", tags=["Reporting"])
+def get_agent_costs(
+    account_id: int = Query(..., description="Google Ads account ID"),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Aggregated Claude API token/cost usage for this Google Ads account."""
+    from db.models import AgentRun  # noqa: PLC0415
+
+    q = db.query(AgentRun).filter(AgentRun.account_id == account_id)
+    if date_from:
+        q = q.filter(AgentRun.started_at >= date_from)
+    if date_to:
+        q = q.filter(AgentRun.started_at <= date_to)
+
+    runs = q.all()
+
+    by_agent: dict[str, dict] = {}
+    by_day: dict[str, dict] = {}
+    total_tokens = 0
+    total_cost = 0.0
+
+    for r in runs:
+        name = r.agent_name or "unknown"
+        if name not in by_agent:
+            by_agent[name] = {"agent_name": name, "runs": 0, "tokens": 0, "cost_usd": 0.0}
+        by_agent[name]["runs"] += 1
+        if r.tokens_used:
+            by_agent[name]["tokens"] += r.tokens_used
+            total_tokens += r.tokens_used
+        if r.cost_usd:
+            by_agent[name]["cost_usd"] += float(r.cost_usd)
+            total_cost += float(r.cost_usd)
+
+        if r.started_at:
+            d = r.started_at.date().isoformat()
+            if d not in by_day:
+                by_day[d] = {"date": d, "cost_usd": 0.0, "tokens": 0}
+            if r.tokens_used:
+                by_day[d]["tokens"] += r.tokens_used
+            if r.cost_usd:
+                by_day[d]["cost_usd"] += float(r.cost_usd)
+
+    return {
+        "service": "google-ads",
+        "period_cost_usd": round(total_cost, 4),
+        "period_tokens": total_tokens,
+        "by_agent": sorted(by_agent.values(), key=lambda x: x["cost_usd"], reverse=True),
+        "by_day": sorted(by_day.values(), key=lambda x: x["date"]),
+    }
+
+
 # ── Internal (Brand DNA Director) routes ─────────────────────────────────────
 
 _internal_router = APIRouter(prefix="/internal", tags=["Internal"])

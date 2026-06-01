@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Globe, ShoppingBag, Code2 } from 'lucide-react'
@@ -6,6 +6,8 @@ import { createProject } from '@/api/webdev'
 import { Card, CardBody, CardHeader } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
+import { useAgentActivity } from '@/shared/context/AgentActivityContext'
+import { useClient } from '@/shared/hooks/useClient'
 
 const PLATFORMS = [
   { id: 'wordpress', label: 'WordPress', icon: Globe },
@@ -18,6 +20,9 @@ export function NewProjectForm({ webdevClientId }: { webdevClientId: number }) {
   const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { data: client } = useClient(clientId!)
+  const { startJob, completeJob, failJob } = useAgentActivity()
+  const jobRef = useRef<string | null>(null)
 
   const [platform, setPlatform] = useState<Platform>('wordpress')
   const [projectName, setProjectName] = useState('')
@@ -41,10 +46,14 @@ export function NewProjectForm({ webdevClientId }: { webdevClientId: number }) {
         },
       }),
     onSuccess: (project) => {
+      if (jobRef.current) completeJob(jobRef.current)
       qc.invalidateQueries({ queryKey: ['webdev-projects', webdevClientId] })
       navigate(`/clients/${clientId}/webdev/${project.id}`)
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      if (jobRef.current) failJob(jobRef.current, err.message)
+      setError(err.message)
+    },
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -52,11 +61,17 @@ export function NewProjectForm({ webdevClientId }: { webdevClientId: number }) {
     setError('')
     if (!projectName.trim()) { setError('Project name is required.'); return }
     if (!description.trim()) { setError('Brief description is required.'); return }
+    jobRef.current = startJob({
+      agentType: 'webdev',
+      clientId: clientId!,
+      clientName: client?.name ?? clientId!,
+      task: `Creating ${platform} project "${projectName.trim()}"`,
+    })
     mutate()
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}/webdev`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
@@ -79,7 +94,7 @@ export function NewProjectForm({ webdevClientId }: { webdevClientId: number }) {
           <Card>
             <CardHeader><h2 className="text-sm font-semibold text-slate-700">Platform</h2></CardHeader>
             <CardBody>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PLATFORMS.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -124,7 +139,7 @@ export function NewProjectForm({ webdevClientId }: { webdevClientId: number }) {
                 value={targetAudience}
                 onChange={e => setTargetAudience(e.target.value)}
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Estimated pages"
                   type="number"

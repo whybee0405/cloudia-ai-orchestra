@@ -189,7 +189,7 @@ function NewPersonaForm({ value, onChange, onSave, onCancel, isSaving }: {
     <div className="border-2 border-brand-200 rounded-xl p-4 space-y-4 bg-brand-50/30">
       <p className="text-sm font-semibold text-slate-700">New Persona</p>
       <Input label="Persona Name" value={value.persona_name} onChange={e => set({ persona_name: e.target.value })} placeholder="e.g. The Busy Professional" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input label="Age Min" type="number" value={value.age_min ?? ''} onChange={e => set({ age_min: parseInt(e.target.value) || undefined })} />
         <Input label="Age Max" type="number" value={value.age_max ?? ''} onChange={e => set({ age_max: parseInt(e.target.value) || undefined })} />
       </div>

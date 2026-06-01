@@ -304,8 +304,8 @@ export function BrandDNAReviewPage() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-10">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 lg:p-10">
+      <div className="max-w-2xl mx-auto space-y-5 md:space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -315,7 +315,7 @@ export function BrandDNAReviewPage() {
             >
               <ArrowLeft className="w-4 h-4" /> Back to Hub
             </button>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">
               Review Brand DNA
               {client?.name && <span className="text-slate-400 font-normal"> — {client.name}</span>}
             </h1>
@@ -409,7 +409,7 @@ export function BrandDNAReviewPage() {
         >
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-700">Visual Style</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {VISUAL_STYLES.map(vs => (
                 <button
                   key={vs.value}
@@ -431,7 +431,7 @@ export function BrandDNAReviewPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-700">Primary Colour *</label>
               <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2 py-1.5">
@@ -456,7 +456,7 @@ export function BrandDNAReviewPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-700">Heading Font</label>
               <select value={draft.heading_font} onChange={e => patch({ heading_font: e.target.value })}

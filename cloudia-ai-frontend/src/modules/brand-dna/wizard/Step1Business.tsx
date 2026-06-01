@@ -60,7 +60,7 @@ export function Step1Business({ data, onChange, onNext, isSaving, onGenerate, is
           type="url"
           hint="Used by the AI enrichment agent to extract brand signals"
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Industry</label>
             <select
@@ -79,7 +79,7 @@ export function Step1Business({ data, onChange, onNext, isSaving, onGenerate, is
             placeholder="e.g. Fine Dining"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Location"
             value={data.location}

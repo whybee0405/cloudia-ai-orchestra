@@ -147,7 +147,7 @@ export function CampaignDetail({ campaignId }: { campaignId: number }) {
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}/campaigns`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
@@ -156,15 +156,15 @@ export function CampaignDetail({ campaignId }: { campaignId: number }) {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-slate-900">{campaign.name}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">{campaign.name}</h1>
             <Badge variant={STATUS_BADGE[status] ?? 'default'}>{status}</Badge>
           </div>
           {campaign.goal && <p className="text-sm text-slate-500">{campaign.goal}</p>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {(status === 'active' || status === 'running') && (
             <Button variant="secondary" size="sm" onClick={() => pause()} loading={pausing}>
               <Pause className="w-3.5 h-3.5" /> Pause
@@ -180,7 +180,7 @@ export function CampaignDetail({ campaignId }: { campaignId: number }) {
 
       {/* Pending approval banner */}
       {pendingGates.length > 0 && (
-        <div className="mb-5 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3">
+        <div className="mb-5 flex flex-wrap items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3">
           <CheckSquare className="w-4 h-4 shrink-0" />
           <span>
             <strong>{pendingGates.length}</strong> approval gate{pendingGates.length > 1 ? 's' : ''} waiting for review.
@@ -191,13 +191,13 @@ export function CampaignDetail({ campaignId }: { campaignId: number }) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-200 mb-5">
+      {/* Tabs — scrollable on mobile */}
+      <div className="flex items-center gap-1 border-b border-slate-200 mb-5 overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-3 md:px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               tab === t.key
                 ? 'border-purple-600 text-purple-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -215,7 +215,7 @@ export function CampaignDetail({ campaignId }: { campaignId: number }) {
 
       {/* Tab content */}
       {tab === 'overview' && (
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Card>
             <CardHeader><h2 className="text-sm font-semibold text-slate-700">Details</h2></CardHeader>
             <CardBody className="space-y-3 text-sm">

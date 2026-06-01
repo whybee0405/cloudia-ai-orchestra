@@ -88,7 +88,7 @@ function ConnectAccount({
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
@@ -148,7 +148,7 @@ function ConnectAccount({
                 value={form.monthly_ad_spend}
                 onChange={set('monthly_ad_spend')}
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Primary KPI</label>
                   <select
@@ -195,7 +195,7 @@ function AdsAccountView({ account }: { account: AdsAccount }) {
   const [tab, setTab] = useState<Tab>('overview')
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"

@@ -10,6 +10,14 @@ import { BrandDNAWizard } from '@/modules/brand-dna/wizard/BrandDNAWizard'
 import { CampaignsModule } from '@/modules/campaigns/CampaignsModule'
 import { AdsModule } from '@/modules/google-ads/AdsModule'
 import { WebdevModule } from '@/modules/webdev/WebdevModule'
+import { AgentActivityPage } from '@/modules/activity/AgentActivityPage'
+import { ReportsModule } from '@/modules/reports/ReportsModule'
+import { ClientPerformanceDashboard } from '@/modules/reports/ClientPerformanceDashboard'
+import { AnomalyHistoryReport } from '@/modules/reports/AnomalyHistoryReport'
+import { CrossServiceFeed } from '@/modules/reports/CrossServiceFeed'
+import { CampaignOutputLog } from '@/modules/reports/CampaignOutputLog'
+import { AgentCostReport } from '@/modules/reports/AgentCostReport'
+import { BrandDNAUsageAudit } from '@/modules/reports/BrandDNAUsageAudit'
 
 export function AppRouter() {
   return (
@@ -17,6 +25,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<AppShell />}>
           <Route index element={<Navigate to="/clients" replace />} />
+          <Route path="activity" element={<AgentActivityPage />} />
           <Route path="clients" element={<ClientList />} />
           <Route path="clients/new" element={<CreateClient />} />
           <Route path="clients/:clientId" element={<ClientHub />} />
@@ -27,6 +36,15 @@ export function AppRouter() {
           <Route path="clients/:clientId/campaigns/*" element={<CampaignsModule />} />
           <Route path="clients/:clientId/ads/*" element={<AdsModule />} />
           <Route path="clients/:clientId/webdev/*" element={<WebdevModule />} />
+          <Route path="clients/:clientId/reports" element={<ReportsModule />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard"  element={<ClientPerformanceDashboard />} />
+            <Route path="anomalies"  element={<AnomalyHistoryReport />} />
+            <Route path="activity"   element={<CrossServiceFeed />} />
+            <Route path="output-log" element={<CampaignOutputLog />} />
+            <Route path="costs"      element={<AgentCostReport />} />
+            <Route path="brand-dna"  element={<BrandDNAUsageAudit />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

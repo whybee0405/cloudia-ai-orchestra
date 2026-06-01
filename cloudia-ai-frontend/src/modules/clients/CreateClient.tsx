@@ -64,7 +64,7 @@ export function CreateClient() {
   const set = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }))
 
   return (
-    <div className="p-8 max-w-xl">
+    <div className="p-4 md:p-8 max-w-xl">
       <button
         onClick={() => navigate('/clients')}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors"
@@ -73,7 +73,7 @@ export function CreateClient() {
         Back to Clients
       </button>
 
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">New Client</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">New Client</h1>
       <p className="text-sm text-slate-500 mb-6">You'll set up Brand DNA in the next step.</p>
 
       <Card>
@@ -95,7 +95,7 @@ export function CreateClient() {
             placeholder="https://example.co.za"
             type="url"
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-sm font-medium text-slate-700">Industry</label>
               <select
@@ -116,7 +116,7 @@ export function CreateClient() {
               placeholder="e.g. Fine Dining"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Location"
               value={form.location}

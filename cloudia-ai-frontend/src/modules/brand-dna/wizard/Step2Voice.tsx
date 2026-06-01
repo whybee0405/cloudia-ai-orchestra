@@ -40,7 +40,7 @@ export function Step2Voice({ data, onChange, onNext, onBack, isSaving }: Props) 
             <label className="block text-sm font-medium text-slate-700">Tone of Voice</label>
             <span className="text-xs font-medium text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">Required</span>
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {TONES.map(t => (
               <button
                 key={t.value}

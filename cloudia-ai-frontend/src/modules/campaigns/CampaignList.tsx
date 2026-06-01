@@ -94,10 +94,10 @@ export function CampaignList({ directorClientId }: { directorClientId: number })
   if (isLoading) return <PageLoader />
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Social Campaigns</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Social Campaigns</h1>
           <p className="text-sm text-slate-500 mt-0.5">Multi-agent content pipeline</p>
         </div>
         <Button onClick={() => navigate(`/clients/${clientId}/campaigns/new`)}>
@@ -127,7 +127,7 @@ export function CampaignList({ directorClientId }: { directorClientId: number })
       )}
 
       {campaigns && campaigns.length > 0 && (
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {campaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
         </div>
       )}

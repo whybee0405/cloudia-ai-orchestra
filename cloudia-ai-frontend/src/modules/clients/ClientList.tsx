@@ -16,11 +16,11 @@ export function ClientList() {
   })
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Clients</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Clients</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {clients?.length ?? 0} client{clients?.length !== 1 ? 's' : ''}
           </p>
@@ -78,7 +78,7 @@ export function ClientList() {
                   {client.industry && <span className="capitalize">{client.industry.replace(/_/g, ' ')}</span>}
                   {client.location && <span>· {client.location}</span>}
                   {client.website_url && (
-                    <span className="truncate max-w-[200px]">· {client.website_url.replace(/^https?:\/\//, '')}</span>
+                    <span className="hidden sm:inline truncate max-w-[180px]">· {client.website_url.replace(/^https?:\/\//, '')}</span>
                   )}
                 </div>
               </div>

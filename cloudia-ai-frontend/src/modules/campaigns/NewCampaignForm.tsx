@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
@@ -6,6 +6,8 @@ import { createCampaign, type CampaignCreate } from '@/api/campaigns'
 import { Card, CardBody, CardHeader } from '@/shared/components/Card'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
+import { useAgentActivity } from '@/shared/context/AgentActivityContext'
+import { useClient } from '@/shared/hooks/useClient'
 
 const PLATFORMS = ['Instagram', 'Facebook', 'Twitter', 'LinkedIn', 'TikTok', 'YouTube']
 
@@ -41,6 +43,9 @@ export function NewCampaignForm({ directorClientId }: { directorClientId: number
   const qc = useQueryClient()
   const [form, setForm] = useState<FormState>(EMPTY)
   const [error, setError] = useState('')
+  const { data: client } = useClient(clientId!)
+  const { startJob, completeJob, failJob } = useAgentActivity()
+  const jobRef = useRef<string | null>(null)
 
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [key]: e.target.value }))
@@ -54,10 +59,14 @@ export function NewCampaignForm({ directorClientId }: { directorClientId: number
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: CampaignCreate) => createCampaign(payload),
     onSuccess: campaign => {
+      if (jobRef.current) completeJob(jobRef.current)
       qc.invalidateQueries({ queryKey: ['campaigns', directorClientId] })
       navigate(`/clients/${clientId}/campaigns/${campaign.id}`)
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      if (jobRef.current) failJob(jobRef.current, err.message)
+      setError(err.message)
+    },
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -70,6 +79,13 @@ export function NewCampaignForm({ directorClientId }: { directorClientId: number
     if (form.objective.trim()) brief.objective = form.objective.trim()
     if (form.content_themes.trim()) brief.content_themes = form.content_themes.trim()
     if (form.tone_notes.trim()) brief.tone_notes = form.tone_notes.trim()
+
+    jobRef.current = startJob({
+      agentType: 'campaign-director',
+      clientId: clientId!,
+      clientName: client?.name ?? clientId!,
+      task: `Creating campaign "${form.name.trim()}"`,
+    })
 
     mutate({
       client_id: directorClientId,
@@ -85,14 +101,14 @@ export function NewCampaignForm({ directorClientId }: { directorClientId: number
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl">
       <button
         onClick={() => navigate(`/clients/${clientId}/campaigns`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Campaigns
       </button>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">New Campaign</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-6">New Campaign</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card>
@@ -111,7 +127,7 @@ export function NewCampaignForm({ directorClientId }: { directorClientId: number
                 placeholder="e.g. Increase brand awareness during the summer season"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Duration (days)" type="number" min={1} value={form.duration_days} onChange={set('duration_days')} placeholder="30" />
               <Input label="Posts per week" type="number" min={1} value={form.posts_per_week} onChange={set('posts_per_week')} placeholder="3" />
             </div>

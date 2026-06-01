@@ -91,12 +91,19 @@ async def verify_api_key(request: Request) -> None:
 
 from backend.api.routes import projects, approvals, content  # noqa: E402
 from backend.api.routes import settings as settings_router   # noqa: E402
+from backend.api.routes import reporting as reporting_router # noqa: E402
 from backend.api import websocket                            # noqa: E402
 
 app.include_router(
     projects.router,
     prefix="/api/webdev/projects",
     tags=["projects"],
+    dependencies=[Depends(verify_api_key)],
+)
+app.include_router(
+    reporting_router.router,
+    prefix="/api/webdev",
+    tags=["reporting"],
     dependencies=[Depends(verify_api_key)],
 )
 app.include_router(

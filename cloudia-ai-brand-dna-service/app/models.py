@@ -109,3 +109,21 @@ class ICPPersona(Base):
     updated_at = Column(DateTime(timezone=True), default=_now)
 
     client = relationship("Client", back_populates="personas")
+
+
+class BrandDNAAccessLog(Base):
+    __tablename__ = "brand_dna_access_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("clients.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    accessed_at = Column(DateTime(timezone=True), default=_now, nullable=False)
+    accessed_by_service = Column(String(50))   # "campaign-director" | "google-ads" | "webdev"
+    accessed_by_agent = Column(String(100))
+    persona_ids_used = Column(JSON)            # list of persona IDs in the context
+    brand_dna_version_at = Column(DateTime(timezone=True))  # brand_dna.updated_at at time of access
+
+    client = relationship("Client")

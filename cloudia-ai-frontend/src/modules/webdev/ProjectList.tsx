@@ -89,7 +89,7 @@ export function ProjectList({ webdevClientId }: { webdevClientId: number }) {
   if (isLoading) return <PageLoader />
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
@@ -103,7 +103,7 @@ export function ProjectList({ webdevClientId }: { webdevClientId: number }) {
             <Globe className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Website Projects</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Website Projects</h1>
             <p className="text-sm text-slate-500">{projects?.length ?? 0} project{projects?.length !== 1 ? 's' : ''}</p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 """Internal endpoints — only accessible within the private network, not exposed via nginx."""
+import threading
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
@@ -6,7 +7,7 @@ from typing import Optional
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import Client
+from app.models import Client, BrandDNAAccessLog
 from app.schemas import BrandContext, PersonaContext, BrandDNAResponse, Suggestion, SuggestionsResponse
 from app.agents.director import run_director
 
@@ -62,11 +63,36 @@ def health():
     return {"service": "brand-dna", "status": "ok"}
 
 
+def _log_access_async(
+    client_id: UUID,
+    persona_ids: list,
+    brand_dna_version_at,
+    service_name: str,
+    agent_name: str,
+) -> None:
+    """Write an access log row in a separate session. Failures are silent."""
+    from app.database import SessionLocal  # noqa: PLC0415
+    try:
+        with SessionLocal() as log_db:
+            log_db.add(BrandDNAAccessLog(
+                client_id=client_id,
+                accessed_by_service=service_name or "unknown",
+                accessed_by_agent=agent_name or "unknown",
+                persona_ids_used=persona_ids,
+                brand_dna_version_at=brand_dna_version_at,
+            ))
+            log_db.commit()
+    except Exception:
+        pass
+
+
 @router.get("/clients/{client_id}/brand-context", response_model=BrandContext)
 def get_brand_context(
     client_id: UUID,
     db: Session = Depends(get_db),
     _: None = Depends(_require_secret),
+    x_service_name: str = Header(default=""),
+    x_agent_name: str = Header(default=""),
 ):
     client = db.get(Client, client_id)
     if not client:
@@ -84,6 +110,19 @@ def get_brand_context(
         )
         for p in client.personas
     ]
+
+    # Log access in background thread to avoid blocking the response
+    threading.Thread(
+        target=_log_access_async,
+        args=(
+            client.id,
+            [p.id for p in client.personas],
+            client.brand_dna.updated_at if client.brand_dna else None,
+            x_service_name,
+            x_agent_name,
+        ),
+        daemon=True,
+    ).start()
 
     return BrandContext(
         client_id=client.id,

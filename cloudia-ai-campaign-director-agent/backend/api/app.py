@@ -11,6 +11,7 @@ def register_routes(app: FastAPI) -> None:
         analytics,
         settings as settings_router,
         internal,
+        reporting,
     )
     from backend.api.routes import oauth
     from backend.api import websocket as ws_module
@@ -23,6 +24,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(analytics.router, prefix="/api")
     app.include_router(settings_router.router, prefix="/api/campaigns")
     app.include_router(oauth.router, prefix="/api")
+    app.include_router(reporting.router, prefix="/api")
     app.include_router(internal.router)
     app.add_api_websocket_route("/ws/{campaign_id}", ws_module.pipeline_ws)
 

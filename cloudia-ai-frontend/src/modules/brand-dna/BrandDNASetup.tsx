@@ -6,6 +6,7 @@ import type { ScrapeSignals } from '@/api/brand-dna'
 import { Button } from '@/shared/components/Button'
 import { ArrowLeft, Sparkles, ArrowRight, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAgentActivity } from '@/shared/context/AgentActivityContext'
 
 const LOADING_MESSAGES = [
   'Reading your brief…',
@@ -100,17 +101,24 @@ export function BrandDNASetup() {
   const [signals, setSignals] = useState<ScrapeSignals | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const scrapeTriggered = useRef(false)
+  const { startJob, completeJob, failJob } = useAgentActivity()
 
   // Auto-trigger scrape once client with website_url is loaded
   useEffect(() => {
     if (!client?.website_url || scrapeTriggered.current) return
     scrapeTriggered.current = true
     setScraping(true)
+    const jobId = startJob({
+      agentType: 'brand-dna',
+      clientId: clientId!,
+      clientName: client.name,
+      task: 'Scanning website for brand signals',
+    })
     scrapeWebsite(clientId!)
-      .then(setSignals)
-      .catch(() => { /* silent — scrape is best-effort */ })
+      .then(data => { completeJob(jobId); setSignals(data) })
+      .catch(() => completeJob(jobId))
       .finally(() => setScraping(false))
-  }, [client, clientId])
+  }, [client, clientId, startJob, completeJob])
 
   // Focus textarea once scrape finishes
   useEffect(() => {
@@ -133,11 +141,20 @@ export function BrandDNASetup() {
     if (!description.trim()) return
     setError('')
     setGenerating(true)
+    const jobId = startJob({
+      agentType: 'brand-dna',
+      clientId: clientId!,
+      clientName: client?.name ?? clientId!,
+      task: 'Generating Brand DNA',
+    })
     try {
       await generateBrandDNA(clientId!, buildPrompt())
+      completeJob(jobId)
       navigate(`/clients/${clientId}/brand-dna/review?source=ai`)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Generation failed')
+      const msg = e instanceof Error ? e.message : 'Generation failed'
+      failJob(jobId, msg)
+      setError(msg)
       setGenerating(false)
     }
   }
@@ -148,7 +165,7 @@ export function BrandDNASetup() {
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-brand-50/30 flex flex-col">
         {/* Header */}
-        <div className="px-8 pt-8">
+        <div className="px-4 sm:px-8 pt-6 sm:pt-8">
           <button
             onClick={() => navigate(`/clients/${clientId}`)}
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors"
@@ -158,7 +175,7 @@ export function BrandDNASetup() {
         </div>
 
         {/* Main */}
-        <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 md:py-12">
           <div className="w-full max-w-xl space-y-5">
             {/* Title */}
             <div className="text-center space-y-2">
@@ -166,7 +183,7 @@ export function BrandDNASetup() {
                 <Sparkles className="w-3.5 h-3.5" />
                 AI-Powered Setup
               </div>
-              <h1 className="text-3xl font-bold text-slate-900">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
                 Set up Brand DNA
                 {client?.name && <span className="text-brand-600"> for {client.name}</span>}
               </h1>

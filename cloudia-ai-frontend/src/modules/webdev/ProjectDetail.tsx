@@ -258,7 +258,7 @@ export function ProjectDetail() {
   const pendingGates = project.gates.filter(g => g.status === 'pending').length
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button
         onClick={() => navigate(`/clients/${clientId}/webdev`)}
         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
@@ -266,13 +266,13 @@ export function ProjectDetail() {
         <ArrowLeft className="w-4 h-4" /> Back to Projects
       </button>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
             <PlatformIcon className="w-5 h-5 text-purple-600" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 truncate">
               {(project.brief?.project_name as string) ?? `Project #${project.id}`}
             </h1>
             <p className="text-sm text-slate-500 capitalize">
@@ -293,7 +293,7 @@ export function ProjectDetail() {
         </div>
       )}
 
-      <div className="flex items-center gap-1 border-b border-slate-200 mb-6">
+      <div className="flex items-center gap-1 border-b border-slate-200 mb-6 overflow-x-auto">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}

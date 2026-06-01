@@ -8,7 +8,7 @@ import { BrandDNABadge } from '@/shared/components/BrandDNABadge'
 import { SuggestionCard } from '@/shared/components/SuggestionCard'
 import { PageLoader } from '@/shared/components/LoadingSpinner'
 import { Badge } from '@/shared/components/Badge'
-import { ArrowLeft, ArrowUpRight, Megaphone, BarChart2, Globe, Dna, RefreshCw, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Megaphone, BarChart2, Globe, Dna, RefreshCw, Sparkles, FileBarChart } from 'lucide-react'
 import { CompletenessRing } from '@/shared/components/CompletenessRing'
 import { getBrandDNAScore } from '@/lib/brand-dna-score'
 
@@ -55,10 +55,17 @@ export function ClientHub() {
       color: 'bg-emerald-50 text-emerald-600',
       path: `/clients/${id}/webdev`,
     },
+    {
+      key: 'reports',
+      label: 'Reports',
+      icon: FileBarChart,
+      color: 'bg-slate-100 text-slate-600',
+      path: `/clients/${id}/reports`,
+    },
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Back nav */}
       <button
         onClick={() => navigate('/clients')}
@@ -69,17 +76,17 @@ export function ClientHub() {
       </button>
 
       {/* Client header */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-brand-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-brand-700 font-bold text-lg">{client.name.charAt(0)}</span>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-brand-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-brand-700 font-bold text-base md:text-lg">{client.name.charAt(0)}</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900">{client.name}</h1>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 truncate">{client.name}</h1>
               {!client.is_active && <Badge variant="warning">Inactive</Badge>}
             </div>
-            <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-xs md:text-sm text-slate-500">
               {client.industry && <span className="capitalize">{client.industry.replace(/_/g, ' ')}</span>}
               {client.location && <span>· {client.location}</span>}
               {client.website_url && (
@@ -87,11 +94,11 @@ export function ClientHub() {
                   href={client.website_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-brand-600 flex items-center gap-0.5"
+                  className="hover:text-brand-600 flex items-center gap-0.5 truncate max-w-[200px]"
                   onClick={e => e.stopPropagation()}
                 >
                   · {client.website_url.replace(/^https?:\/\//, '')}
-                  <ArrowUpRight className="w-3 h-3" />
+                  <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
                 </a>
               )}
             </div>
@@ -103,9 +110,9 @@ export function ClientHub() {
       </div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column: Brand DNA + services */}
-        <div className="col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-5">
           {/* Brand DNA card */}
           <Card>
             <CardHeader>
@@ -179,7 +186,7 @@ export function ClientHub() {
           </Card>
 
           {/* Services */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {services.map(({ key, label, icon: Icon, color, path }) => (
               <Card
                 key={key}
